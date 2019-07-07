@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rack'
 require 'sinatra/base'
 require 'sinatra/respond_with'
@@ -8,26 +10,30 @@ require 'plist'
 module Rack
   class RemoteConfiguration
     def initialize(options = {})
-      raise ArgumentError, "Missing required :configuration option" unless options[:configuration]
+      raise ArgumentError, 'Missing required :configuration option' unless options[:configuration]
 
-      path = options[:path] || "/configuration"
+      path = options[:path] || '/configuration'
       configuration = case options[:configuration]
                       when Hash
                         options[:configuration]
                       when File
-                        return new((Plist::parse_xml(configuration.path) || JSON.parse(configuration.read) rescue nil))
+                        return new((begin
+                                      Plist.parse_xml(configuration.path) || JSON.parse(configuration.read)
+                                    rescue StandardError
+                                      nil
+                                    end))
                       when String
                         return new(File.open(configuration)) if File.exist?(configuration)
                       end
 
-      raise ArgumentError, "Invalid configuration (expected Hash or either .json or .plist File or file path)" if configuration.nil?
+      raise ArgumentError, 'Invalid configuration (expected Hash or either .json or .plist File or file path)' if configuration.nil?
 
       begin
-        [:to_json, :to_plist].each do |serialization|
+        %i[to_json to_plist].each do |serialization|
           configuration.send(serialization)
         end
-      rescue NoMethodError => error
-        raise ArgumentError, "Serialization Error: #{error}"
+      rescue NoMethodError => e
+        raise ArgumentError, "Serialization Error: #{e}"
       end
 
       @app = Class.new(Sinatra::Base) do
