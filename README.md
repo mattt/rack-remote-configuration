@@ -2,6 +2,8 @@
 
 **Serve property list or JSON configuration files**
 
+> This project is no longer maintained.
+
 Although mobile and rich web clients consume resources from a server,
 there may be some application details
 that you'd like to coordinate outside of the resource structure of an API.
